@@ -182,6 +182,27 @@ non fa niente. Restano due alternative:
 - con il WiFi, ArkOS (e di solito anche dArkOS) ha *Enable Remote Services* nelle Opzioni: in Esplora risorse
   scrivi `\\<indirizzo-IP-della-console>` e vedi le cartelle in rete.
 
+## Schermo PC: lo schermo di Windows sulla console (sperimentale)
+
+1. Sulla console avvia **Ports -> Schermo PC**: trasforma il cavo USB in una
+   piccola rete (console = `169.254.7.1`) e apre l'app.
+2. Collega il cavo USB-C dati alla porta **OTG**.
+3. Sul PC fai doppio clic su **`pc/Schermo su console.bat`** (la prima volta installa
+   `mss` e `pygame-ce`) e premi Invio. Se usi il WiFi, scrivi l'indirizzo che la
+   console mostra sullo schermo.
+
+Windows impiega fino a un minuto a "vedere" la rete USB la prima volta.
+
+Comandi sulla console: **croce** = mouse del PC (accelera se la tieni premuta),
+**A** click sinistro, **B** click destro, **X** doppio click, **L1/R1** rotella,
+**L2/R2** zoom (1x tutto lo schermo, 2x e 3x attorno al mouse, per leggere il
+testo), **Y** info, **SELECT+START** esci.
+
+Funziona via cavo solo se il kernel ha la modalita' USB "device" con la
+funzione di rete NCM (Windows 10 e 11 la riconoscono senza driver). Altrimenti
+funziona via WiFi, se la console ce l'ha. Va a circa 10-15 immagini al secondo:
+e' adatto per guardare, non per giocare. Il log e' in `tool/log-schermo.txt`.
+
 ## Compatibilita'
 
 - **pygame 2** (dArkOS, ROCKNIX, PC) e **pygame 1.9** (ArkOS vecchio basato su

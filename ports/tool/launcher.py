@@ -68,6 +68,12 @@ def main():
             for name, path in apps:
                 if name == "configura_tasti":
                     run_app(ctx, name, path)
+        if "--app" in sys.argv:          # avvio diretto di una app (es. Schermo PC.sh)
+            want = sys.argv[sys.argv.index("--app") + 1]
+            for name, path in apps:
+                if name == want:
+                    run_app(ctx, name, path)
+            return
         index = 0
         while True:
             items = []
