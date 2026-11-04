@@ -1,7 +1,7 @@
 # R36 Tool: programmi fatti da noi sulla R36S (clone)
 
 Un menu che parte dalla sezione **Ports** della console e lancia programmini
-in Python + pygame: **Areometro**, **Cronometro**, **Configura tasti**, piu' un
+in Python + pygame: **Amichetto** (Bobo), **Areometro**, **Cronometro**, **Configura tasti**, piu' un
 modello per scriverne di nuovi.
 
 ```
@@ -12,6 +12,7 @@ ports/
     r36/                  <- mini-libreria: schermo, tasti, menu, moduli
     apps/
       areometro/          <- correzione temperatura, ABV, SG/Plato/Brix
+      amichetto/          <- Bobo, il piccolo amico virtuale
       cronometro/
       configura_tasti/    <- mappatura tasti (parte da sola al 1o avvio)
       _modello/           <- copia questa cartella per una nuova app
@@ -102,3 +103,16 @@ e una funzione che calcola i risultati. Guarda `apps/areometro/main.py`.
   (taratura di default 20 C, modificabile).
 - ABV = (OG - FG) x 131.25, piu' la formula alternativa "precisa" per gradi alti.
 - SG -> Plato / Brix con i polinomi standard, Brix -> SG per il rifrattometro.
+
+## Amichetto: Bobo
+
+Un piccolo amico verde col germoglio in testa. Ha tre bisogni: **fame**, **energia** e **allegria**.
+
+- **Mangia**: mela, biscotto o pizza. Se e' pieno rifiuta e sbuffa.
+- **Gioca**: indovina in quale pacchetto ha nascosto il biscotto (SINISTRA o DESTRA).
+- **Coccole**: cuoricini! Fanno passare anche il broncio.
+- **Luce**: lo metti a dormire o lo svegli. Se lo svegli quando e' stanco si arrabbia.
+- **X = stuzzica**: tre volte di fila e diventa rosso e sbuffa fumo.
+
+Quando chiudi l'app lo stato viene salvato in `bobo.json`. Il tempo passa
+anche mentre sei via, ma piu' piano, e Bobo non muore mai.
