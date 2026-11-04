@@ -6,6 +6,7 @@ uguale anche sui cloni con schermi diversi e sul PC.
 """
 import json
 import os
+import sys
 import time
 
 import pygame
@@ -150,6 +151,12 @@ class Input:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     raise QuitAll()
+                if event.key == pygame.K_F11:
+                    try:
+                        pygame.display.toggle_fullscreen()
+                    except pygame.error:
+                        pass
+                    continue
                 act = KEYBOARD.get(event.key)
                 if act:
                     self._press(act, now, pressed)
@@ -204,14 +211,23 @@ class Ctx:
         except pygame.error:
             pass
         pygame.init()
-        windowed = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
-                        or os.environ.get("R36_WINDOW"))
+        windowed = bool(sys.platform in ("win32", "darwin") or os.environ.get("DISPLAY")
+                        or os.environ.get("WAYLAND_DISPLAY") or os.environ.get("R36_WINDOW"))
+        self.windowed = windowed
         if windowed:
-            self.display = pygame.display.set_mode((W, H))
+            # sul PC: finestra ridimensionabile, 1.5x se lo schermo e' abbastanza grande
+            size = (W, H)
+            try:
+                info = pygame.display.Info()
+                if info.current_w >= 1200 and info.current_h >= 860:
+                    size = (W * 3 // 2, H * 3 // 2)
+            except pygame.error:
+                pass
+            self.display = pygame.display.set_mode(size, pygame.RESIZABLE)
         else:
             self.display = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        pygame.display.set_caption("R36 Tool")
-        pygame.mouse.set_visible(False)
+        pygame.display.set_caption("R36 Tool  (F11 schermo intero, ESC esci)")
+        pygame.mouse.set_visible(windowed)
         self.surf = pygame.Surface((W, H))
         self.clock = pygame.time.Clock()
         self._fonts = {}
@@ -224,6 +240,7 @@ class Ctx:
 
     def _compute_scale(self):
         dw, dh = self.display.get_size()
+        self._last_size = (dw, dh)
         s = min(dw / W, dh / H)
         self._scaled = (max(1, int(W * s)), max(1, int(H * s)))
         self._offset = ((dw - self._scaled[0]) // 2, (dh - self._scaled[1]) // 2)
@@ -262,6 +279,10 @@ class Ctx:
             self.text(hint, W // 2, H - 27, 24, DIM, align="center")
 
     def flip(self, fps=30):
+        cur = pygame.display.get_surface()
+        if cur is not None and (cur is not self.display or cur.get_size() != self._last_size):
+            self.display = cur
+            self._compute_scale()
         if self._scaled == (W, H) and self._offset == (0, 0):
             self.display.blit(self.surf, (0, 0))
         else:

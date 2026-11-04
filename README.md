@@ -88,7 +88,14 @@ tasto non ce l'hai, aspetta 8 secondi e viene saltato). Tutto viene salvato in
 - **SELECT + START** chiude sempre l'app corrente.
 - Se qualcosa va storto, guarda `tool/log.txt`.
 
-## 4. Provare sul PC
+## 4. Provare sul PC (Windows)
+
+Doppio clic su **`ports/Avvia su Windows.bat`**. Serve Python 3 da
+python.org (durante l'installazione spunta *Add python.exe to PATH*). La prima
+volta installa pygame da solo. Si apre una finestra ridimensionabile:
+**F11** schermo intero, **ESC** esci. Funziona anche un gamepad collegato al PC.
+
+## 4b. Provare sul PC (Linux / Mac)
 
 ```bash
 pip install pygame
@@ -195,6 +202,7 @@ non fa niente. Restano due alternative:
 | **Macchina della verita'** | l'amico tiene premuto A mentre risponde, il grafico impazzisce, poi arriva il verdetto | al rilascio tieni **L1** per VERITA' o **R1** per BUGIA |
 | **Scanner** | pollice sullo schermo, tieni premuto A: impronta, linea di scansione, percentuale e frase. Misure: simpatia, pigrizia, fame, contenuto di pizza, nerd, russare, fortuna | a fine scansione tieni **L1** per 70-100%, **R1** per 0-5% |
 | **Invito** | mostri lo schermo e Bobo fa la domanda al posto tuo (caffe', gelato, aperitivo, numero). Se dice SI': festa e cuori. Se dice NO, Bobo ci prova in modo simpatico al massimo due volte, poi la ringrazia | nel titolo **Y** per il tuo nome, **X** per cambiare domanda |
+| **Cielo stellato** | lei scrive il suo nome, le stelle si accendono una alla volta con le note e disegnano il nome come una costellazione, poi una stella cadente e il messaggio | **Y** cambia messaggio |
 | **Palla magica** | fai una domanda, premi A, la palla trema e risponde | - |
 
 Sono tutte per gioco: niente sensori veri, e' teatro.

@@ -55,6 +55,11 @@ def ensure_pygame():
     errors = []
     if not os.environ.get(FLAG) and _try(None, errors):
         return "sistema"
+    import platform
+    if not (sys.platform.startswith("linux") and platform.machine() in ("aarch64", "arm64")):
+        # sul PC il pygame del kit (ARM) non serve: va installato normalmente
+        sys.stderr.write("pygame non installato. Sul PC:  pip install pygame\n")
+        sys.exit(2)
     if _try(os.path.join(VENDOR, TAG), errors):
         return "kit"
     if os.path.isdir(os.path.join(VENDOR, TAG)) and _copy_to_cache() \
