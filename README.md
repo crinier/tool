@@ -222,7 +222,7 @@ e' adatto per guardare, non per giocare. Il log e' in `tool/log-schermo.txt`.
 | **Lovometro** | scrivi due nomi e il cuore si riempie con la percentuale. Le stesse due persone hanno sempre lo stesso risultato | tieni **L1** mentre confermi il secondo nome: 100% |
 | **Macchina della verita'** | l'amico tiene premuto A mentre risponde, il grafico impazzisce, poi arriva il verdetto | al rilascio tieni **L1** per VERITA' o **R1** per BUGIA |
 | **Scanner** | pollice sullo schermo, tieni premuto A: impronta, linea di scansione, percentuale e frase. Misure: simpatia, pigrizia, fame, contenuto di pizza, nerd, russare, fortuna | a fine scansione tieni **L1** per 70-100%, **R1** per 0-5% |
-| **Invito** | mostri lo schermo e Bobo fa la domanda al posto tuo (caffe', gelato, aperitivo, numero). Se dice SI': festa e cuori. Se dice NO, Bobo ci prova in modo simpatico al massimo due volte, poi la ringrazia | nel titolo **Y** per il tuo nome, **X** per cambiare domanda |
+| **Invito** | sfondo a gradiente animato, luci sfocate, occhi luminosi di Bobo, testo a macchina da scrivere, musica leggera. Bobo si presenta con un po' di umorismo ("ha costruito me, si', davvero"), fa una domanda precisa e leggera ("un caffe', solo 15 minuti"). Se dice si': fuochi d'artificio di cuori e il tuo numero. Se dice "un'altra volta": la ringrazia, senza insistere | nel titolo **Y** nome, **X** domanda, **START** numero |
 | **Cielo stellato** | lei scrive il suo nome, le stelle si accendono una alla volta con le note e disegnano il nome come una costellazione, poi una stella cadente e il messaggio | **Y** cambia messaggio |
 | **Palla magica** | fai una domanda, premi A, la palla trema e risponde | - |
 
