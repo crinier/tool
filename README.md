@@ -175,12 +175,10 @@ di toccare i dati e lo scrive sullo schermo. Il log e' in `/tmp/r36-chiavetta.lo
 
 **Funziona solo se il kernel del sistema ha la modalita' USB "device" sulla
 porta OTG.** Molte immagini per R36S la tengono solo in modalita' "host" (per
-le chiavette WiFi e i gamepad). In quel caso lo script ti dice "nessun UDC" e
+le chiavette e i gamepad). In quel caso lo script ti dice "nessun UDC" e
 non fa niente. Restano due alternative:
 - togli la SD e mettila nel PC con un lettore di schede (la partizione giochi
   e' FAT32/exFAT, Windows la vede);
-- con il WiFi, ArkOS (e di solito anche dArkOS) ha *Enable Remote Services* nelle Opzioni: in Esplora risorse
-  scrivi `\\<indirizzo-IP-della-console>` e vedi le cartelle in rete.
 
 ## Schermo PC: lo schermo di Windows sulla console (sperimentale)
 
@@ -188,8 +186,7 @@ non fa niente. Restano due alternative:
    piccola rete (console = `169.254.7.1`) e apre l'app.
 2. Collega il cavo USB-C dati alla porta **OTG**.
 3. Sul PC fai doppio clic su **`pc/Schermo su console.bat`** (la prima volta installa
-   `mss` e `pygame-ce`) e premi Invio. Se usi il WiFi, scrivi l'indirizzo che la
-   console mostra sullo schermo.
+   `mss` e `pygame-ce`) : si collega da solo al cavo.
 
 Windows impiega fino a un minuto a "vedere" la rete USB la prima volta.
 
@@ -199,8 +196,7 @@ Comandi sulla console: **croce** = mouse del PC (accelera se la tieni premuta),
 testo), **Y** info, **SELECT+START** esci.
 
 Funziona via cavo solo se il kernel ha la modalita' USB "device" con la
-funzione di rete NCM (Windows 10 e 11 la riconoscono senza driver). Altrimenti
-funziona via WiFi, se la console ce l'ha. Va a circa 10-15 immagini al secondo:
+funzione di rete NCM (Windows 10 e 11 la riconoscono senza driver). Solo cavo: niente WiFi, niente internet. Va a circa 10-15 immagini al secondo:
 e' adatto per guardare, non per giocare. Il log e' in `tool/log-schermo.txt`.
 
 ## Compatibilita'

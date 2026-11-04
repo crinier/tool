@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Manda lo schermo del PC alla console (app "Schermo PC") e riceve il mouse.
 
-Uso:  python schermo_su_console.py [indirizzo-console]
-      (senza indirizzo prova 169.254.7.1, quello del cavo USB)
+Solo cavo USB: la console e' sempre 169.254.7.1 (niente WiFi, niente internet).
+Uso:  python schermo_su_console.py
 
 Richiede:  pip install mss pygame-ce
 Il mouse comandato dalla console funziona su Windows.
@@ -111,8 +111,8 @@ def connect(host):
 
 def main():
     import mss
-    host = sys.argv[1] if len(sys.argv) > 1 else (input("Indirizzo della console [169.254.7.1]: ").strip()
-                                                   or "169.254.7.1")
+    host = sys.argv[1] if len(sys.argv) > 1 else "169.254.7.1"   # indirizzo fisso del cavo
+    print("Cerco la console sul cavo USB (%s)..." % host)
     pygame.init()
     zoom = 1
     with mss.mss() as sct:

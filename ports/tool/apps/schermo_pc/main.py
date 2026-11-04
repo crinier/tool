@@ -1,8 +1,8 @@
 """Schermo PC: mostra lo schermo di Windows sulla console.
 
 Sul PC gira pc/schermo_su_console.py, che cattura lo schermo e lo manda qui
-via rete (cavo USB in modalita' rete, oppure WiFi). Dalla console comandi
-il mouse del PC.
+attraverso il cavo USB (niente WiFi, niente internet). Dalla console
+comandi il mouse del PC.
 
 Tasti: croce = mouse (piu' la tieni, piu' va veloce)
        A = click sinistro, B = click destro, X = doppio click
@@ -28,19 +28,36 @@ FG = (220, 225, 235)
 DIM = (120, 126, 140)
 
 
-def my_ips():
-    ips = []
-    try:
-        out = subprocess.run(["ip", "-4", "-o", "addr"], capture_output=True, text=True, timeout=2).stdout
-        for line in out.splitlines():
-            parts = line.split()
-            if len(parts) >= 4 and parts[2] == "inet":
-                ip = parts[3].split("/")[0]
-                if not ip.startswith("127."):
-                    ips.append("%s (%s)" % (ip, parts[1]))
-    except (OSError, subprocess.SubprocessError):
-        pass
-    return ips
+CABLE_IP = "169.254.7.1"
+
+
+def usb_status():
+    """Stato del cavo: ('configured' = il PC ha riconosciuto la console)."""
+    import glob
+    info = []
+    for u in glob.glob("/sys/class/udc/*/state"):
+        try:
+            st = open(u).read().strip()
+            info.append(("Cavo USB: " + {"configured": "collegato al PC",
+                                          "not attached": "il PC non vede la console"}.get(st, st),
+                         st == "configured"))
+        except OSError:
+            pass
+    # otg_mode: cerca solo pochi livelli (una ricerca completa in /sys si blocca)
+    for pat in ("/sys/devices/platform/*/otg_mode", "/sys/devices/platform/*/*/otg_mode",
+                "/sys/devices/platform/*/*/*/otg_mode"):
+        found = glob.glob(pat)
+        if found:
+            try:
+                info.append(("modo porta: " + open(found[0]).read().strip(), False))
+            except OSError:
+                pass
+            break
+    if not glob.glob("/sys/kernel/config/usb_gadget/r36net"):
+        info.append(("Collegamento non attivo: avvia da Ports -> Schermo PC", False))
+    if not info:
+        info.append(("Nessuna porta USB device trovata", False))
+    return info
 
 
 class Link:
@@ -125,7 +142,7 @@ def run(ctx):
         r36.message(ctx, NAME, "Non riesco ad aprire la porta %d:\n%s" % (PORT, e), r36.BAD)
         return
     frame_img = None
-    ips = my_ips()
+    usb = usb_status()
     next_ips = time.monotonic() + 3
     zoom = 1
     show_info = True
@@ -174,7 +191,7 @@ def run(ctx):
             if now - fps_t >= 1:
                 fps, fps_n, fps_t = fps_n / (now - fps_t), 0, now
             if link.conn is None and now >= next_ips:
-                ips, next_ips = my_ips(), now + 3
+                usb, next_ips = usb_status(), now + 1
                 frame_img = None
 
             s = ctx.surf
@@ -194,14 +211,15 @@ def run(ctx):
                 if link.conn:
                     ctx.text("Collegato a %s, aspetto le immagini..." % link.peer, W // 2, 120, 28, FG, align="center")
                 else:
-                    ctx.text("In attesa del PC sulla porta %d" % PORT, W // 2, 100, 28, FG, align="center")
-                    ctx.text("Indirizzi di questa console:", W // 2, 150, 26, DIM, align="center")
-                    y = 185
-                    for ip in ips[:5] or ["(nessuna rete: cavo USB o WiFi?)"]:
-                        ctx.text(ip, W // 2, y, 30, (255, 255, 255), align="center", bold=True)
-                        y += 36
-                    ctx.text("Sul PC avvia 'Schermo su console.bat'", W // 2, 380, 24, DIM, align="center")
-                    ctx.text("e scrivi uno di questi indirizzi.", W // 2, 408, 24, DIM, align="center")
+                    ctx.text("In attesa del PC (solo cavo USB)", W // 2, 100, 28, FG, align="center")
+                    y = 160
+                    for line, ok in usb:
+                        ctx.text(line, W // 2, y, 30 if y == 160 else 24,
+                                 (120, 230, 140) if ok else (255, 190, 90), align="center", bold=True)
+                        y += 40 if y == 160 else 30
+                    ctx.text("1. cavo DATI nella porta OTG", W // 2, 300, 24, DIM, align="center")
+                    ctx.text("2. sul PC: doppio clic su 'Schermo su console.bat'", W // 2, 330, 24, DIM, align="center")
+                    ctx.text("console = %s" % CABLE_IP, W // 2, 372, 22, (90, 96, 110), align="center")
                 ctx.text("SELECT+START esci", W // 2, H - 26, 20, DIM, align="center")
             ctx.flip(60)
     finally:

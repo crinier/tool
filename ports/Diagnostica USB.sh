@@ -30,7 +30,7 @@ printf "\033c" >"$TTY" 2>/dev/null
     if modinfo "$m" >/dev/null 2>&1 || grep -qw "${m}" /proc/modules 2>/dev/null; then echo -n "$m:si "; else echo -n "$m:no "; fi
   done
   echo
-  for f in $(find /sys/devices/platform -name otg_mode 2>/dev/null); do echo "otg_mode: $(cat "$f")  ($f)"; done
+  for f in $(find /sys/devices/platform -maxdepth 5 -name otg_mode 2>/dev/null); do echo "otg_mode: $(cat "$f")  ($f)"; done
   if [ -d /sys/kernel/config/usb_gadget ]; then
     T=/sys/kernel/config/usb_gadget/r36test
     echo -n "funzioni USB nel kernel: "

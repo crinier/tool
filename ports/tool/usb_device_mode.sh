@@ -6,7 +6,7 @@
 OTG_FILE=""
 OTG_OLD=""
 force_device() {
-  OTG_FILE="$(find /sys/devices/platform -name otg_mode 2>/dev/null | head -n1)"
+  OTG_FILE="$(find /sys/devices/platform -maxdepth 5 -name otg_mode 2>/dev/null | head -n1)"
   if [ -n "$OTG_FILE" ]; then
     OTG_OLD="$(cat "$OTG_FILE" 2>/dev/null | tr -d '[:space:]')"
     case "$OTG_OLD" in host|peripheral|otg) ;; *) OTG_OLD=otg ;; esac

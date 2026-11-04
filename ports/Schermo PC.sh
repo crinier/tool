@@ -6,7 +6,7 @@
 # Poi parte l'app "Schermo PC". Sul PC avvia pc/"Schermo su console.bat".
 #
 # SPERIMENTALE: serve la modalita' USB "device" (come per Chiavetta USB).
-# Se non c'e', l'app parte lo stesso e funziona via WiFi, se c'e' il WiFi.
+# Solo cavo: niente WiFi, niente internet.
 
 DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)/tool"
 LOG="$DIR/log-schermo.txt"
@@ -77,7 +77,11 @@ if gadget_up; then
       "Collega il cavo alla porta OTG e avvia sul PC" "'Schermo su console.bat'."
   sleep 2
 else
-  out "Modalita' USB device non disponibile (vedi $LOG)." "Provo comunque via WiFi, se c'e'."
+  out "Cavo USB non disponibile su questa console (vedi $LOG)." "Avvia 'Diagnostica USB' e manda la foto."
+  sleep 8
+  gadget_down
+  printf "\033c" >"$TTY" 2>/dev/null
+  exit 1
 fi
 sleep 2
 trap gadget_down EXIT

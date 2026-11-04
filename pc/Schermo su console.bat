@@ -11,7 +11,7 @@ if errorlevel 1 (
 )
 echo.
 echo Sulla console apri:  Ports - "Schermo PC"  (oppure Tool - Schermo PC)
-echo Lascia vuoto per il cavo USB, oppure scrivi l'indirizzo mostrato dalla console.
+echo Collega il cavo USB dati alla porta OTG della console. Niente altro da fare.
 echo.
 %PY% schermo_su_console.py
 pause
