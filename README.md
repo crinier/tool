@@ -194,6 +194,7 @@ non fa niente. Restano due alternative:
 | **Lovometro** | scrivi due nomi e il cuore si riempie con la percentuale. Le stesse due persone hanno sempre lo stesso risultato | tieni **L1** mentre confermi il secondo nome: 100% |
 | **Macchina della verita'** | l'amico tiene premuto A mentre risponde, il grafico impazzisce, poi arriva il verdetto | al rilascio tieni **L1** per VERITA' o **R1** per BUGIA |
 | **Scanner** | pollice sullo schermo, tieni premuto A: impronta, linea di scansione, percentuale e frase. Misure: simpatia, pigrizia, fame, contenuto di pizza, nerd, russare, fortuna | a fine scansione tieni **L1** per 70-100%, **R1** per 0-5% |
+| **Invito** | mostri lo schermo e Bobo fa la domanda al posto tuo (caffe', gelato, aperitivo, numero). Se dice SI': festa e cuori. Se dice NO, Bobo ci prova in modo simpatico al massimo due volte, poi la ringrazia | nel titolo **Y** per il tuo nome, **X** per cambiare domanda |
 | **Palla magica** | fai una domanda, premi A, la palla trema e risponde | - |
 
 Sono tutte per gioco: niente sensori veri, e' teatro.
