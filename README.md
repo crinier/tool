@@ -172,3 +172,14 @@ non fa niente. Restano due alternative:
 - **Audio**: se manca la scheda audio o il driver, le app restano mute ma funzionano.
 - `Tool.sh` funziona da utente con `sudo` (ArkOS e dArkOS) o da root (ROCKNIX e
   AmberELEC). Prova in ordine i driver video `kmsdrm`, automatico e `fbcon`.
+
+## App per stupire gli amici
+
+| App | Cosa fa | Trucco segreto |
+|---|---|---|
+| **Rilevatore** | radar di movimento da film: fascio che gira, presenze che si avvicinano, bip sempre piu' veloci, allarme e "CONTATTO!" | tieni **L1**: arrivano piu' in fretta. Tieni **R1**: spariscono |
+| **Lovometro** | scrivi due nomi e il cuore si riempie con la percentuale. Le stesse due persone hanno sempre lo stesso risultato | tieni **L1** mentre confermi il secondo nome: 100% |
+| **Macchina della verita'** | l'amico tiene premuto A mentre risponde, il grafico impazzisce, poi arriva il verdetto | al rilascio tieni **L1** per VERITA' o **R1** per BUGIA |
+| **Palla magica** | fai una domanda, premi A, la palla trema e risponde | - |
+
+Sono tutte per gioco: niente sensori veri, e' teatro.

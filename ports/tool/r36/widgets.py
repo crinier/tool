@@ -149,3 +149,58 @@ def message(ctx, title, text, color=FG):
             ctx.text(ln, 20, y, 26, color)
             y += 28
         ctx.flip()
+
+
+KEY_ROWS = ["ABCDEFGHIJ", "KLMNOPQRST", "UVWXYZ'-.!", "0123456789"]
+KEY_SPECIAL = ["SPAZIO", "CANC", "OK"]
+
+
+def keyboard(ctx, title, text="", maxlen=16):
+    """Tastiera sullo schermo. Croce muove, A scrive, B cancella (o annulla se vuoto),
+    X spazio, START conferma. Ritorna la stringa oppure None."""
+    rows = [list(r) for r in KEY_ROWS] + [KEY_SPECIAL]
+    r, c = 0, 0
+    ctx.input.flush()
+    while True:
+        for a in ctx.input.poll():
+            if a == "UP":
+                r = (r - 1) % len(rows)
+            elif a == "DOWN":
+                r = (r + 1) % len(rows)
+            elif a == "LEFT":
+                c = (c - 1) % len(rows[r])
+            elif a == "RIGHT":
+                c = (c + 1) % len(rows[r])
+            elif a == "START":
+                return text.strip() or None
+            elif a == "X" and len(text) < maxlen:
+                text += " "
+            elif a == "B":
+                if not text:
+                    return None
+                text = text[:-1]
+            elif a == "A":
+                key = rows[r][c]
+                if key == "OK":
+                    return text.strip() or None
+                if key == "CANC":
+                    text = text[:-1]
+                elif len(text) < maxlen:
+                    text += " " if key == "SPAZIO" else key
+            c = min(c, len(rows[r]) - 1)
+        ctx.header(title, "A scrivi  B cancella  X spazio  START ok")
+        pygame.draw.rect(ctx.surf, PANEL, (40, 66, W - 80, 56), border_radius=10)
+        cursor = "_" if int(pygame.time.get_ticks() / 400) % 2 else " "
+        ctx.text(text + cursor, W // 2, 76, 44, ACCENT, align="center", bold=True)
+        for ri, row in enumerate(rows):
+            y = 140 + ri * 54
+            if ri < len(KEY_ROWS):
+                kw, x0 = 54, (W - 10 * 58) // 2
+            else:
+                kw, x0 = 170, (W - 3 * 178) // 2
+            for ci, key in enumerate(row):
+                x = x0 + ci * (kw + 4)
+                sel = ri == r and ci == c
+                pygame.draw.rect(ctx.surf, ACCENT if sel else PANEL, (x, y, kw, 48), border_radius=8)
+                ctx.text(key, x + kw // 2, y + 11, 32, (20, 20, 20) if sel else FG, align="center", bold=True)
+        ctx.flip()
