@@ -15,6 +15,10 @@ import traceback
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+from pg_boot import ensure_pygame  # noqa: E402
+
+PYGAME_FROM = ensure_pygame()
+
 import r36  # noqa: E402
 
 APPS_DIR = os.path.join(HERE, "apps")
@@ -56,6 +60,7 @@ def run_app(ctx, name, path):
 
 
 def main():
+    print("pygame:", PYGAME_FROM, flush=True)
     ctx = r36.Ctx()
     try:
         apps = find_apps()

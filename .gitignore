@@ -4,3 +4,4 @@ __pycache__/
 *.tmp
 r36-tool.zip
 bobo.json
+ports/tool/vendor/

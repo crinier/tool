@@ -46,19 +46,32 @@ tasti non vanno, prova gli altri dtb per cloni che il sistema offre
 (cartella `boot` della SD, istruzioni della release) -> quando schermo e
 tasti funzionano, vai al punto 2.
 
-## 2. Python e pygame sulla console
+## 2. Python e pygame sulla console: niente internet
 
-Serve una chiavetta WiFi USB oppure il WiFi integrato, se il tuo clone lo ha.
-Dal terminale della console oppure via SSH:
+**La console non deve andare online.** Lo zip del kit contiene gia' pygame
+(`tool/vendor/`, circa 110 MB) per ARM64 e Python 3.7-3.13. Il launcher lo
+usa da solo se il sistema non ha pygame.
+
+Dettaglio tecnico: il pygame ufficiale per ARM ha dentro un SDL2 senza il
+driver KMSDRM, quindi sullo schermo della console resterebbe nero. Le sue
+librerie sono state modificate per usare l'SDL2 **del sistema**, quello che
+usano gli emulatori. Ordine dei tentativi:
+1. pygame del sistema;
+2. pygame del kit con l'SDL2 del sistema;
+3. una copia in `~/.cache` (se la SD non permette di eseguire librerie);
+4. l'SDL2 interno del kit.
+
+Nel file `tool/log.txt`, la riga `pygame: ...` dice quale tentativo ha funzionato.
+
+La cartella `vendor/` non e' nel repository git (e' grande): si rigenera sul
+PC con
 
 ```bash
-python3 -c "import pygame; print(pygame.version.ver)"
+pip install patchelf
 ```
 
-Se da' errore:
-
 ```bash
-sudo apt update && sudo apt install -y python3-pygame
+python3 tools/prepara_pygame.py
 ```
 
 ## 3. Installazione
