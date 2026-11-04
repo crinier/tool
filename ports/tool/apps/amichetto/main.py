@@ -1,6 +1,7 @@
-"""Bobo, il piccolo amico virtuale.
+"""Bobo, il piccolo amico: due occhi su schermo nero.
 
 Mangia, dorme, gioca, vuole le coccole e se lo stuzzichi troppo si arrabbia.
+Ogni cosa ha il suo versetto (suoni sintetizzati, niente file audio).
 Lo stato viene salvato in bobo.json: quando torni, il tempo e' passato anche
 per lui (ma con calma, non muore mai).
 """
@@ -13,18 +14,22 @@ import time
 import pygame
 
 import r36
+from r36 import sound
 
 NAME = "Amichetto"
-DESCRIPTION = "Bobo: mangia, dorme, gioca e si arrabbia"
+DESCRIPTION = "Bobo: due occhi che mangiano, dormono e si arrabbiano"
 SAVE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bobo.json")
 W, H = r36.W, r36.H
-
-INK = (60, 50, 70)
-BODY = (140, 222, 180)
-BODY_ANGRY = (245, 120, 110)
-BELLY = (205, 245, 220)
-CHEEK = (255, 150, 170)
+BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+GREY = (70, 74, 86)
+DIMTXT = (120, 126, 140)
+
+EYE_COLORS = {
+    "happy": (90, 225, 255), "hungry": (255, 205, 90), "tired": (110, 150, 220),
+    "sad": (100, 140, 255), "angry": (255, 60, 50), "sleep": (50, 80, 150),
+    "love": (255, 110, 175),
+}
 
 FOODS = [  # nome, sazieta', felicita', energia, frase
     ("Mela", 25, 2, 0, "Croc croc!"),
@@ -36,7 +41,7 @@ ACTIONS = ["Mangia", "Gioca", "Coccole", "Luce"]
 TALK = {
     "happy": ["Ti voglio bene!", "Che bella giornata!", "Mi fai compagnia?",
               "Lalala~", "Sei il mio amico preferito!", "Hihi!"],
-    "hungry": ["Ho fame...", "Pancino vuoto!", "Un biscottino?", "Gnam gnam... magari!"],
+    "hungry": ["Ho fame...", "Pancino vuoto!", "Un biscottino?"],
     "tired": ["Che sonno...", "Uaaah...", "Spegni la luce?"],
     "sad": ["Giochiamo?", "Mi annoio...", "Mi dai una coccola?"],
     "angry": ["Uffa!", "Grrr!", "Hmpf!", "Non ti parlo!"],
@@ -45,6 +50,10 @@ TALK = {
 
 def clamp(v):
     return max(0.0, min(100.0, v))
+
+
+def lerp(a, b, k):
+    return a + (b - a) * k
 
 
 def lerp_color(a, b, k):
@@ -75,11 +84,9 @@ class Pet:
             if k in d:
                 setattr(self, k, d[k])
         away = max(0.0, min(time.time() - d.get("saved", time.time()), 10 * 3600))
-        # mentre eri via il tempo passa piu' piano
-        step = 60.0
-        while away > 0:
-            self.tick(min(step, away) * 0.35)
-            away -= step
+        while away > 0:  # mentre eri via il tempo passa piu' piano
+            self.tick(min(60.0, away) * 0.35)
+            away -= 60.0
         self.food, self.energy, self.fun = (max(8.0, x) for x in (self.food, self.energy, self.fun))
         return True
 
@@ -119,9 +126,9 @@ class Pet:
         return int((time.time() - self.born) // 86400)
 
 
-# ---------------------------------------------------------------- disegno
+# ---------------------------------------------------------------- icone
 
-def heart(surf, x, y, s, color=(255, 90, 130)):
+def heart(surf, x, y, s, color=(255, 90, 140)):
     r = max(1, int(s * 0.55))
     pygame.draw.circle(surf, color, (int(x - s * 0.45), int(y)), r)
     pygame.draw.circle(surf, color, (int(x + s * 0.45), int(y)), r)
@@ -130,7 +137,7 @@ def heart(surf, x, y, s, color=(255, 90, 130)):
 
 def apple(surf, x, y, s):
     pygame.draw.circle(surf, (235, 70, 80), (x, y), s)
-    pygame.draw.line(surf, (120, 80, 40), (x, y - s), (x + 2, y - s - 6), 3)
+    pygame.draw.line(surf, (150, 100, 50), (x, y - s), (x + 2, y - s - 6), 3)
     pygame.draw.ellipse(surf, (110, 200, 90), (x + 3, y - s - 8, 10, 6))
 
 
@@ -159,7 +166,7 @@ def ball(surf, x, y, s):
     pygame.draw.arc(surf, WHITE, (x - s, y - s // 2, s * 2, s), math.pi, 2 * math.pi, 3)
 
 
-def moon(surf, x, y, s, bg, color=(250, 235, 160)):
+def moon(surf, x, y, s, bg=BLACK, color=(250, 235, 160)):
     pygame.draw.circle(surf, color, (x, y), s)
     pygame.draw.circle(surf, bg, (x + s // 2, y - s // 3), s)
 
@@ -175,126 +182,127 @@ def sun(surf, x, y, s):
 FOOD_ICONS = [apple, cookie, pizza]
 
 
-def draw_room(surf, t, night):
-    wall = (32, 36, 66) if night else (252, 240, 222)
-    floor = (48, 46, 76) if night else (232, 206, 176)
-    surf.fill(wall)
-    pygame.draw.rect(surf, floor, (0, 330, W, H - 330))
-    pygame.draw.line(surf, lerp_color(floor, INK, 0.25), (0, 330), (W, 330), 3)
-    # finestra
-    wx, wy, ww, wh = 470, 90, 130, 110
-    sky = (20, 24, 50) if night else (170, 220, 255)
-    pygame.draw.rect(surf, sky, (wx, wy, ww, wh), border_radius=10)
-    if night:
-        for i, (sx, sy) in enumerate(((490, 110), (530, 175), (585, 120), (560, 150), (505, 160))):
-            if math.sin(t * 2 + i * 1.7) > -0.3:
-                pygame.draw.circle(surf, (255, 250, 200), (sx, sy), 2)
-        moon(surf, 560, 130, 18, sky)
-    else:
-        sun(surf, 505, 120, 14)
-        cx = 560 + math.sin(t * 0.3) * 15
-        for dx, r in ((-14, 11), (0, 15), (15, 11)):
-            pygame.draw.circle(surf, WHITE, (int(cx + dx), 165), r)
-    frame = (90, 80, 110) if night else (190, 150, 110)
-    pygame.draw.rect(surf, frame, (wx, wy, ww, wh), 6, border_radius=10)
-    pygame.draw.line(surf, frame, (wx + ww // 2, wy), (wx + ww // 2, wy + wh), 4)
-    pygame.draw.line(surf, frame, (wx, wy + wh // 2), (wx + ww, wy + wh // 2), 4)
-    # tappetino
-    pygame.draw.ellipse(surf, (90, 80, 130) if night else (240, 170, 170), (170, 345, 300, 50))
+# ---------------------------------------------------------------- occhi
+
+# Ogni espressione e' un insieme di parametri; gli occhi ci scivolano dentro
+# morbidamente. lo/li = palpebra superiore lato esterno/interno (0..1),
+# smile = palpebra inferiore che sale (occhi a "^"), w/h = dimensioni.
+EXPR = {
+    "happy":  dict(w=100, h=130, lo=0.0, li=0.0, smile=0.0),
+    "joy":    dict(w=110, h=120, lo=0.0, li=0.0, smile=0.62),
+    "hungry": dict(w=96, h=120, lo=0.25, li=0.0, smile=0.0),
+    "tired":  dict(w=104, h=120, lo=0.48, li=0.48, smile=0.0),
+    "sad":    dict(w=96, h=124, lo=0.42, li=0.0, smile=0.0),
+    "angry":  dict(w=104, h=118, lo=0.0, li=0.52, smile=0.12),
+    "sleep":  dict(w=110, h=10, lo=0.0, li=0.0, smile=0.0),
+    "love":   dict(w=110, h=110, lo=0.0, li=0.0, smile=0.0),
+    "squeeze": dict(w=110, h=14, lo=0.0, li=0.0, smile=0.0),
+}
 
 
-def draw_pet(surf, cx, cy, t, mood, fx):
-    """fx: dict con effetti momentanei (jump, eat, love, poke)."""
-    angry = mood == "angry"
-    breathe = math.sin(t * (1.2 if mood == "sleep" else 2.4))
-    jump = fx.get("jump", 0)
-    y_off = -abs(math.sin(jump * math.pi * 2)) * 50 if jump > 0 else 0
-    x_off = math.sin(t * 45) * 3 if angry else 0
-    if fx.get("poke", 0) > 0:
-        x_off += math.sin(t * 60) * 6
-    bw = 120 * (1 - 0.035 * breathe)
-    bh = 104 * (1 + 0.035 * breathe)
-    x = cx + x_off
-    y = cy + y_off + (4 if mood == "sleep" else 0)
+class Eyes:
+    def __init__(self):
+        self.p = dict(EXPR["happy"])
+        self.color = EYE_COLORS["happy"]
+        self.look = [0.0, 0.0]
+        self.look_target = [0.0, 0.0]
+        self.next_look = 1.0
+        self.blink_at = 2.0
+        self.blink_t = -1.0
+        self.double = False
+        self.glow = {}
 
-    # ombra
-    sh = 1 - min(1, -y_off / 80)
-    pygame.draw.ellipse(surf, lerp_color((200, 170, 150), (30, 30, 50), 0.5 if mood == "sleep" else 0),
-                        (cx - bw * sh, cy + bh - 12, bw * 2 * sh, 24))
+    def update(self, dt, t, expr, color, look=None):
+        k = min(1.0, dt * 10)
+        for key, v in EXPR[expr].items():
+            self.p[key] = lerp(self.p[key], v, k)
+        self.color = lerp_color(self.color, color, min(1.0, dt * 6))
+        if look is not None:
+            self.look_target = list(look)
+        elif t >= self.next_look:
+            if expr in ("sleep", "squeeze"):
+                self.look_target = [0, 6]
+            elif random.random() < 0.35:
+                self.look_target = [0, 0]
+            else:
+                self.look_target = [random.uniform(-45, 45), random.uniform(-22, 18)]
+            self.next_look = t + random.uniform(1.2, 3.5)
+        # gli occhi saltano rapidi verso il punto (saccade), come quelli veri
+        k2 = min(1.0, dt * 14)
+        self.look[0] = lerp(self.look[0], self.look_target[0], k2)
+        self.look[1] = lerp(self.look[1], self.look_target[1], k2)
+        if t >= self.blink_at and self.blink_t < 0:
+            self.blink_t = 0.0
+        if self.blink_t >= 0:
+            self.blink_t += dt
+            if self.blink_t > 0.16:
+                self.blink_t = -1.0
+                if self.double:
+                    self.double = False
+                    self.blink_at = t + 3.0 + random.uniform(0, 3)
+                elif random.random() < 0.2:
+                    self.double = True
+                    self.blink_at = t + 0.12
+                else:
+                    self.blink_at = t + 2.5 + random.uniform(0, 3.5)
 
-    body = lerp_color(BODY, BODY_ANGRY, 0.85 if angry else 0)
-    dark = lerp_color(body, INK, 0.35)
-    # piedini
-    for side in (-1, 1):
-        pygame.draw.ellipse(surf, dark, (x + side * 55 - 24, y + bh - 30, 48, 30))
-    # germoglio in testa
-    sway = math.sin(t * 1.8) * 6
-    top = y - bh + 6
-    pygame.draw.line(surf, (90, 160, 80), (x, top), (x + sway, top - 30), 5)
-    pygame.draw.ellipse(surf, (120, 200, 90), (x + sway - 26, top - 44, 26, 16))
-    pygame.draw.ellipse(surf, (120, 200, 90), (x + sway, top - 40, 26, 16))
-    # corpo
-    pygame.draw.ellipse(surf, body, (x - bw, y - bh, bw * 2, bh * 2))
-    pygame.draw.ellipse(surf, lerp_color(BELLY, body, 0.5 if angry else 0), (x - bw * 0.6, y + 5, bw * 1.2, bh * 0.85))
-    pygame.draw.ellipse(surf, WHITE, (x - bw * 0.6, y - bh * 0.75, 30, 18))  # luccichio
-    # braccini
-    wave = math.sin(t * 10) * 10 if fx.get("love", 0) > 0 or jump > 0 else 0
-    for side in (-1, 1):
-        pygame.draw.ellipse(surf, dark, (x + side * (bw - 8) - 14, y + 10 - (wave if side > 0 else -wave) * 0.5, 28, 40))
+    def blink_factor(self):
+        if self.blink_t < 0:
+            return 1.0
+        x = self.blink_t / 0.16
+        return max(0.08, abs(1 - 2 * x))
 
-    # guance
-    if mood in ("happy", "sleep") or fx.get("love", 0) > 0 or angry:
-        c = (255, 90, 90) if angry else CHEEK
+    def _glow(self, w, h, r, color):
+        key = (int(w) // 4, int(h) // 4, color)
+        if key not in self.glow:
+            if len(self.glow) > 60:
+                self.glow.clear()
+            pad = 22
+            s = pygame.Surface((int(w) + pad * 2, int(h) + pad * 2), pygame.SRCALPHA)
+            for i, a in ((18, 18), (12, 30), (6, 45)):
+                pygame.draw.rect(s, color + (a,), (pad - i, pad - i, int(w) + i * 2, int(h) + i * 2),
+                                 border_radius=int(r + i))
+            self.glow[key] = s
+        return self.glow[key]
+
+    def draw(self, surf, cx, cy, t, mode, shake=0.0, bounce=0.0):
+        p, col = self.p, self.color
+        breathe = math.sin(t * 2.2) * 3
+        hop = abs(math.sin(bounce * math.pi * 3)) * 25 if bounce > 0 else 0
         for side in (-1, 1):
-            pygame.draw.ellipse(surf, c, (x + side * 62 - 16, y + 4, 32, 18))
-
-    # occhi
-    ey = y - 22
-    blink = (t % 3.7) < 0.13
-    love = (fx.get("love", 0) > 0 or jump > 0) and not angry
-    for side in (-1, 1):
-        ex = x + side * 36
-        if mood == "sleep":
-            pygame.draw.arc(surf, INK, (ex - 15, ey - 6, 30, 22), math.pi * 1.05, math.pi * 1.95, 4)
-        elif love:
-            pygame.draw.arc(surf, INK, (ex - 15, ey - 4, 30, 26), math.pi * 0.1, math.pi * 0.9, 5)
-        elif blink:
-            pygame.draw.line(surf, INK, (ex - 13, ey + 4), (ex + 13, ey + 4), 4)
-        else:
-            pygame.draw.ellipse(surf, WHITE, (ex - 14, ey - 16, 28, 36))
-            pr = 7 if angry else 10
-            look = math.sin(t * 0.7) * 3
-            pygame.draw.circle(surf, INK, (int(ex + look), int(ey + 4)), pr)
-            pygame.draw.circle(surf, WHITE, (int(ex + look + 3), int(ey)), 3)
-        # sopracciglia
-        if angry:
-            pygame.draw.line(surf, INK, (ex - side * 10, ey - 14), (ex + side * 18, ey - 26), 6)
-        elif mood in ("sad", "hungry", "tired"):
-            pygame.draw.line(surf, INK, (ex - side * 10, ey - 26), (ex + side * 16, ey - 18), 4)
-
-    # bocca
-    my = y + 20
-    eat = fx.get("eat", 0)
-    if eat > 0:
-        h = 22 if int(eat * 8) % 2 else 6
-        pygame.draw.ellipse(surf, INK, (x - 14, my - h // 2 + 6, 28, h))
-    elif mood == "sleep":
-        r = 5 + breathe * 2
-        pygame.draw.ellipse(surf, INK, (x - r, my + 4, r * 2, r * 1.6))
-    elif mood == "angry":
-        pygame.draw.arc(surf, INK, (x - 20, my + 6, 40, 24), math.pi * 0.15, math.pi * 0.85, 5)
-    elif mood == "hungry":
-        pygame.draw.ellipse(surf, INK, (x - 9, my + 2, 18, 20))
-    elif mood in ("sad", "tired"):
-        pygame.draw.arc(surf, INK, (x - 16, my + 8, 32, 20), math.pi * 0.15, math.pi * 0.85, 4)
-        if mood == "sad":  # lacrimuccia
-            ty = ey + 18 + (t * 30) % 30
-            pygame.draw.circle(surf, (120, 180, 255), (int(x + 40), int(ty)), 5)
-    else:
-        pygame.draw.arc(surf, INK, (x - 20, my - 8, 40, 28), math.pi * 1.1, math.pi * 1.9, 5)
-        if love:
-            pygame.draw.ellipse(surf, (230, 90, 110), (x - 8, my + 8, 16, 10))
-    return x, y - bh
+            ex = cx + side * 105 + self.look[0] + math.sin(t * 50) * shake
+            ey = cy + self.look[1] - hop
+            if mode == "love":
+                s = 52 + math.sin(t * 8) * 6
+                heart(surf, ex, ey - s * 0.4, s, col)
+                continue
+            if mode == "squeeze":  # occhi a > <
+                d = 38
+                pts = [(ex - side * d, ey - d), (ex + side * d * 0.6, ey), (ex - side * d, ey + d)]
+                pygame.draw.lines(surf, col, False, pts, 12)
+                continue
+            w = p["w"]
+            h = max(6.0, p["h"] * self.blink_factor() + (breathe if mode != "sleep" else 0))
+            r = min(w, h) * 0.32
+            surf.blit(self._glow(w, h, r, col), (ex - w / 2 - 22, ey - h / 2 - 22))
+            rect = pygame.Rect(0, 0, int(w), int(h))
+            rect.center = (int(ex), int(ey))
+            pygame.draw.rect(surf, col, rect, border_radius=int(r))
+            if h > 40:  # riflesso
+                pygame.draw.ellipse(surf, lerp_color(col, WHITE, 0.6),
+                                    (rect.x + w * 0.18, rect.y + h * 0.14, w * 0.22, h * 0.16))
+            # palpebra superiore inclinata (copre col nero)
+            top = rect.top - 2
+            outer_x = rect.left - 26 if side < 0 else rect.right + 26
+            inner_x = rect.right + 26 if side < 0 else rect.left - 26
+            lo, li = p["lo"] * h, p["li"] * h
+            if lo > 1 or li > 1:
+                pygame.draw.polygon(surf, BLACK, [(outer_x, top - 40), (inner_x, top - 40),
+                                                  (inner_x, top + li), (outer_x, top + lo)])
+            # palpebra inferiore che sale = occhi sorridenti
+            if p["smile"] > 0.02:
+                sy = rect.bottom - p["smile"] * h
+                pygame.draw.ellipse(surf, BLACK, (rect.x - w * 0.3, sy, w * 1.6, h * 1.3))
 
 
 class Particles:
@@ -315,51 +323,39 @@ class Particles:
         for kind, x, y, vx, vy, life, total in self.items:
             k = life / total
             if kind == "heart":
-                heart(ctx.surf, x, y, 6 + 6 * k)
+                heart(ctx.surf, x, y, 5 + 7 * k)
             elif kind == "z":
-                ctx.text("z", int(x + math.sin(t * 3 + y) * 6), int(y), int(22 + (1 - k) * 22), (200, 210, 255), bold=True)
+                ctx.text("z", int(x + math.sin(t * 3 + y) * 6), int(y), int(22 + (1 - k) * 24),
+                         lerp_color((20, 30, 60), (120, 150, 230), k), bold=True)
             elif kind == "steam":
-                pygame.draw.circle(ctx.surf, (250, 250, 250), (int(x), int(y)), max(1, int(14 * (1 - k) + 4)), 3)
-            elif kind == "note":
-                ctx.text("~", int(x), int(y), 40, (120, 110, 200), bold=True)
+                pygame.draw.circle(ctx.surf, lerp_color((40, 10, 10), (255, 90, 70), k),
+                                   (int(x), int(y)), max(1, int(14 * (1 - k) + 4)), 3)
             elif kind == "crumb":
                 pygame.draw.circle(ctx.surf, (200, 150, 80), (int(x), int(y)), 3)
+            elif kind == "tear":
+                pygame.draw.circle(ctx.surf, (100, 150, 255), (int(x), int(y)), 6)
 
 
 # ---------------------------------------------------------------- HUD
 
 def stat_bar(ctx, x, y, icon, value):
-    icon(ctx.surf, x, y + 10, 10)
-    pygame.draw.rect(ctx.surf, (255, 255, 255), (x + 20, y + 2, 110, 16), border_radius=8)
-    col = (110, 200, 120) if value > 50 else (250, 190, 60) if value > 25 else (240, 90, 90)
-    pygame.draw.rect(ctx.surf, col, (x + 22, y + 4, max(0, int(106 * value / 100)), 12), border_radius=6)
-    pygame.draw.rect(ctx.surf, INK, (x + 20, y + 2, 110, 16), 2, border_radius=8)
+    icon(ctx.surf, x, y + 9, 8)
+    pygame.draw.rect(ctx.surf, (30, 32, 40), (x + 16, y + 4, 100, 10), border_radius=5)
+    col = (90, 200, 120) if value > 50 else (240, 180, 60) if value > 25 else (240, 80, 80)
+    pygame.draw.rect(ctx.surf, col, (x + 16, y + 4, max(0, int(100 * value / 100)), 10), border_radius=5)
 
 
-def bubble(ctx, text, x, y):
-    f = ctx.font(30, True)
-    tw, th = f.size(text)
-    bx = max(10, min(W - tw - 34, x - tw // 2 - 12))
-    by = y - th - 30
-    rect = pygame.Rect(bx, by, tw + 24, th + 16)
-    pygame.draw.polygon(ctx.surf, WHITE, [(x - 10, rect.bottom - 2), (x + 10, rect.bottom - 2), (x, rect.bottom + 14)])
-    pygame.draw.rect(ctx.surf, WHITE, rect, border_radius=14)
-    pygame.draw.rect(ctx.surf, INK, rect, 3, border_radius=14)
-    ctx.text(text, rect.x + 12, rect.y + 9, 30, INK, bold=True)
-
-
-def action_icon(surf, i, x, y, night, bg=WHITE):
+def action_icon(surf, i, x, y, night):
     if i == 0:
-        apple(surf, x, y, 14)
+        apple(surf, x, y, 11)
     elif i == 1:
-        ball(surf, x, y, 14)
+        ball(surf, x, y, 11)
     elif i == 2:
-        heart(surf, x, y - 6, 12)
+        heart(surf, x, y - 5, 10)
+    elif night:
+        sun(surf, x, y, 8)
     else:
-        if night:
-            sun(surf, x, y, 10)
-        else:
-            moon(surf, x, y, 14, bg, (110, 100, 180))
+        moon(surf, x, y, 11, (14, 16, 22), (150, 140, 230))
 
 
 # ---------------------------------------------------------------- app
@@ -368,51 +364,60 @@ class App:
     def __init__(self, ctx):
         self.ctx = ctx
         self.pet = Pet()
-        if not self.pet.load():
-            self.say("Ciao! Sono Bobo!", 4)
         self.t = 0.0
+        first = not self.pet.load()
+        self.eyes = Eyes()
         self.sel = 0
         self.mode = "main"   # main / food / game / reveal
         self.food_sel = 0
         self.fx = {}
         self.parts = Particles()
         self.msg, self.msg_until = "", 0.0
-        self.next_talk = 6.0
+        self.next_talk = 8.0
         self.next_puff = 0.0
         self.game = None
         self.last_save = 0.0
-        self.head = (W // 2, 150)
-        if not self.msg:
-            self.say(random.choice(["Bentornato!", "Mi sei mancato!", "Eccoti!"]) if not self.pet.asleep else "Zzz...", 3)
+        self.cx, self.cy = W // 2, 205
+        if first:
+            self.say("Ciao! Sono Bobo!", 4, "chirp")
+        elif self.pet.asleep:
+            self.say("Zzz...", 3, None)
+        else:
+            self.say(random.choice(["Bentornato!", "Mi sei mancato!", "Eccoti!"]), 3, "chirp")
+            self.fx["joy"] = 1.5
 
-    def say(self, text, secs=2.5):
-        self.msg, self.msg_until = text, getattr(self, "t", 0.0) + secs
+    def say(self, text, secs=2.5, snd="babble"):
+        self.msg, self.msg_until = text, self.t + secs
+        if snd == "babble":
+            sound.play(sound.babble(self.pet.mood()))
+        elif snd:
+            sound.play(snd)
 
     def hearts(self, n=5):
-        x, y = self.head
         for _ in range(n):
-            self.parts.add("heart", x + random.uniform(-70, 70), y + random.uniform(0, 60),
-                           random.uniform(-20, 20), random.uniform(-70, -40), 1.4)
+            self.parts.add("heart", self.cx + random.uniform(-150, 150), self.cy + random.uniform(-20, 40),
+                           random.uniform(-20, 20), random.uniform(-80, -45), 1.4)
 
     # --- azioni
     def do_action(self, i):
         p = self.pet
         if i == 0:
             if p.asleep:
-                self.say("Zzz... (dorme)")
+                self.say("Zzz... (dorme)", snd="snore")
             else:
                 self.mode, self.food_sel = "food", 0
+                sound.play("tick")
         elif i == 1:
             if p.asleep:
-                self.say("Zzz... (dorme)")
+                self.say("Zzz... (dorme)", snd="snore")
             elif p.mood() == "angry":
-                self.say("Non gioco con te! Hmpf!")
+                self.say("Non gioco con te! Hmpf!", snd="angry")
             elif p.energy < 15:
-                self.say("Troppo stanco...")
+                self.say("Troppo stanco...", snd="sad")
             else:
                 self.game = {"hand": random.randint(0, 1), "pick": None, "until": 0}
                 self.mode = "game"
-                self.say("Dov'e' il biscotto?", 30)
+                self.say("Dov'e' il biscotto?", 30, "chirp")
         elif i == 2:
             self.cuddle()
         else:
@@ -424,40 +429,41 @@ class App:
         self.mode = "main"
         if p.food > 92:
             p.anger = max(p.anger, 2.0)
-            self.say("Sono pieno! Basta!")
+            self.say("Sono pieno! Basta!", snd="refuse")
             return
         p.food = clamp(p.food + food)
         p.fun = clamp(p.fun + fun)
         p.energy = clamp(p.energy + energy)
         self.fx["eat"] = 1.6
         self.fx["food_icon"] = k
-        self.say(line)
-        x, y = self.head
-        for _ in range(6):
-            self.parts.add("crumb", x + random.uniform(-15, 15), y + 125,
-                           random.uniform(-60, 60), random.uniform(-30, 30), 0.8)
+        self.say(line, snd="eat")
+        for _ in range(8):
+            self.parts.add("crumb", self.cx + random.uniform(-20, 20), self.cy + 140,
+                           random.uniform(-80, 80), random.uniform(-40, 30), 0.8)
 
     def cuddle(self):
         p = self.pet
         now = self.t
         p.cuddles = [c for c in p.cuddles if now - c < 10] + [now]
         if p.asleep:
-            self.parts.add("heart", self.head[0], self.head[1] + 30, 0, -40, 1.5)
-            self.say("Mmm... (sorride nel sonno)")
+            self.parts.add("heart", self.cx, self.cy - 30, 0, -40, 1.5)
+            self.say("Mmm... (sorride nel sonno)", snd="snore")
             return
         if p.anger > 0:
             p.anger = max(0.0, p.anger - 4)
-            self.say("...va bene, ti perdono" if p.anger == 0 else "Hmpf... ancora un po'")
             if p.anger == 0:
+                self.say("...va bene, ti perdono", snd="love")
                 self.hearts(3)
+            else:
+                self.say("Hmpf... ancora un po'", snd="refuse")
             return
         if len(p.cuddles) > 6:
-            self.say("Basta coccole, mi spettini!")
+            self.say("Basta coccole, mi spettini!", snd="refuse")
             return
         p.fun = clamp(p.fun + 8)
         self.fx["love"] = 1.6
         self.hearts()
-        self.say(random.choice(["Hihi!", "Che bello!", "Ancora!", "Ti voglio bene!"]))
+        self.say(random.choice(["Hihi!", "Che bello!", "Ancora!", "Ti voglio bene!"]), snd="love")
 
     def toggle_light(self):
         p = self.pet
@@ -465,73 +471,102 @@ class App:
             p.asleep = False
             if p.energy < 60:
                 p.anger = 6.0
-                self.say("Stavo dormendo!! Grrr!")
+                self.say("Stavo dormendo!! Grrr!", snd="angry")
             else:
-                self.say("Buongiorno!")
+                self.say("Buongiorno!", snd="wake")
+        elif p.energy > 75 and p.mood() != "angry":
+            self.say("Non ho sonno!", snd="refuse")
         else:
-            if p.energy > 75 and p.mood() != "angry":
-                self.say("Non ho sonno!")
-            else:
-                p.asleep = True
-                self.say("Buonanotte...")
+            p.asleep = True
+            self.say("Buonanotte...", snd="sleep")
 
     def poke(self):
         p = self.pet
         now = self.t
-        self.fx["poke"] = 0.4
+        self.fx["squeeze"] = 0.35
         if p.asleep:
+            p.asleep = False
             if p.energy < 60:
-                p.asleep = False
                 p.anger = 8.0
-                self.say("Ma insomma! Dormivo!")
+                self.say("Ma insomma! Dormivo!", snd="angry")
             else:
-                p.asleep = False
-                self.say("Eh? Gia' mattina?")
+                self.say("Eh? Gia' mattina?", snd="wake")
             return
         p.pokes = [x for x in p.pokes if now - x < 4] + [now]
         if len(p.pokes) >= 3:
             p.anger = 10.0
-            self.fx.pop("love", None)
-            self.fx.pop("jump", None)
             p.fun = clamp(p.fun - 10)
             p.pokes = []
-            self.say("Grrr! BASTA!")
+            for k in ("love", "jump", "joy"):
+                self.fx.pop(k, None)
+            self.say("Grrr! BASTA!", snd="angry")
         elif p.anger > 0:
             p.anger += 3
-            self.say("Lasciami stare!")
+            self.say("Lasciami stare!", snd="angry")
         else:
-            self.say(random.choice(["Ehi!", "Ahi!", "Che c'e'?", "Hihi, solletico!"]))
+            self.say(random.choice(["Ehi!", "Ahi!", "Che c'e'?", "Hihi, solletico!"]), snd="boop")
 
     # --- ciclo
+    def expression(self):
+        mood = self.pet.mood()
+        fx = self.fx
+        if mood == "sleep":
+            return "sleep"
+        if "squeeze" in fx:
+            return "squeeze"
+        if mood == "angry":
+            return "angry"
+        if "love" in fx:
+            return "love"
+        if "eat" in fx or "jump" in fx or "joy" in fx:
+            return "joy"
+        return mood
+
     def update(self, dt):
         p = self.pet
         was_asleep = p.asleep
         p.tick(dt)
         if p.asleep and p.energy >= 100:
             p.asleep = False
-            self.say("Buongiorno! Ho dormito benissimo!")
+            self.say("Buongiorno! Ho dormito benissimo!", snd="wake")
         if not was_asleep and not p.asleep and p.energy <= 0:
             p.asleep = True
-            self.say("Crollo... zzz")
+            self.say("Crollo... zzz", snd="sleep")
         for k in list(self.fx):
             if isinstance(self.fx[k], float):
                 self.fx[k] -= dt
                 if self.fx[k] <= 0:
                     del self.fx[k]
-        self.parts.update(dt)
+
+        expr = self.expression()
         mood = p.mood()
-        x, y = self.head
+        if expr in EYE_COLORS:
+            color = EYE_COLORS[expr]
+        else:  # joy / squeeze
+            color = EYE_COLORS["angry" if mood == "angry" else "happy"]
+        look = None
+        if self.mode == "game":
+            look = (-60 if int(self.t * 1.6) % 2 else 60, 20)
+        elif self.mode == "reveal":
+            look = (-70 if self.game["hand"] == 0 else 70, 30)
+        elif self.mode == "food" or "eat" in self.fx:
+            look = (0, 35)
+        self.eyes.update(dt, self.t, expr, color, look)
+
+        self.parts.update(dt)
         if self.t >= self.next_puff:
             if mood == "sleep":
-                self.parts.add("z", x + 60, y + 40, 25, -35, 2.4)
-                self.next_puff = self.t + 1.3
+                self.parts.add("z", self.cx + 150, self.cy - 20, 25, -35, 2.6)
+                if random.random() < 0.4:
+                    sound.play("snore")
+                self.next_puff = self.t + 1.6
             elif mood == "angry":
                 for side in (-1, 1):
-                    self.parts.add("steam", x + side * 70, y + 10, side * 40, -60, 0.9)
+                    self.parts.add("steam", self.cx + side * 170, self.cy - 70, side * 40, -60, 0.9)
                 self.next_puff = self.t + 0.5
-            elif mood == "happy" and random.random() < 0.3:
-                self.parts.add("note", x + random.choice((-90, 90)), y + 40, 0, -30, 1.5)
-                self.next_puff = self.t + 3
+            elif mood == "sad" and random.random() < 0.5:
+                self.parts.add("tear", self.cx + random.choice((-140, 140)), self.cy + 50, 0, 60, 1.2)
+                self.next_puff = self.t + 2.5
             else:
                 self.next_puff = self.t + 1
         if self.t >= self.next_talk and self.mode == "main":
@@ -548,8 +583,10 @@ class App:
         if self.mode == "food":
             if a == "LEFT":
                 self.food_sel = (self.food_sel - 1) % len(FOODS)
+                sound.play("tick")
             elif a == "RIGHT":
                 self.food_sel = (self.food_sel + 1) % len(FOODS)
+                sound.play("tick")
             elif a == "A":
                 self.eat(self.food_sel)
             elif a == "B":
@@ -566,10 +603,10 @@ class App:
                     p.fun = clamp(p.fun + 20)
                     self.fx["jump"] = 1.0
                     self.hearts(6)
-                    self.say("Bravissimo!! Hai vinto!")
+                    self.say("Bravissimo!! Hai vinto!", snd="win")
                 else:
                     p.fun = clamp(p.fun + 8)
-                    self.say("Ehehe, era di qua!")
+                    self.say("Ehehe, era di qua!", snd="lose")
                 self.mode = "reveal"
             elif a == "B":
                 self.mode = "main"
@@ -579,12 +616,17 @@ class App:
             return True
         if a == "LEFT":
             self.sel = (self.sel - 1) % len(ACTIONS)
+            sound.play("tick")
         elif a == "RIGHT":
             self.sel = (self.sel + 1) % len(ACTIONS)
+            sound.play("tick")
         elif a == "A":
             self.do_action(self.sel)
         elif a == "X":
             self.poke()
+        elif a == "Y":
+            sound.enabled = not sound.enabled
+            self.say("Suoni " + ("accesi" if sound.enabled else "spenti"), 1.5, "tick")
         elif a == "B":
             return False
         return True
@@ -592,41 +634,40 @@ class App:
     def draw(self):
         ctx, p, t = self.ctx, self.pet, self.t
         night = p.asleep
-        draw_room(ctx.surf, t, night)
-        mood = p.mood()
-        self.head = draw_pet(ctx.surf, W // 2 - 20, 250, t, mood, self.fx)
-        hx, hy = self.head
+        ctx.surf.fill(BLACK)
+        expr = self.expression()
+        shake = 3.0 if expr == "angry" else 0.0
+        self.eyes.draw(ctx.surf, self.cx, self.cy, t, expr, shake, self.fx.get("jump", 0))
         if "eat" in self.fx:
             k = self.fx["eat"] / 1.6
-            FOOD_ICONS[self.fx.get("food_icon", 0)](ctx.surf, int(hx), int(hy + 158), max(4, int(18 * k)))
+            FOOD_ICONS[self.fx.get("food_icon", 0)](ctx.surf, self.cx, int(self.cy + 100 + (1 - k) * 10),
+                                                    max(3, int(22 * k)))
         if self.mode in ("game", "reveal"):
             g = self.game
-            for i, bx in enumerate((W // 2 - 200, W // 2 + 160)):
+            for i, bx in enumerate((110, W - 110)):
                 sel = g["pick"] == i
-                pygame.draw.rect(ctx.surf, (250, 210, 230), (bx - 34, 250, 68, 56), border_radius=10)
-                pygame.draw.rect(ctx.surf, INK, (bx - 34, 250, 68, 56), 3 if not sel else 5, border_radius=10)
+                col = (255, 120, 170)
+                pygame.draw.rect(ctx.surf, col, (bx - 34, 280, 68, 56), 6 if sel else 3, border_radius=10)
+                pygame.draw.line(ctx.surf, col, (bx, 280), (bx, 336), 3)
                 if self.mode == "reveal" and i == g["hand"]:
-                    cookie(ctx.surf, bx, 232, 18)
-                else:
-                    pygame.draw.rect(ctx.surf, (240, 100, 130), (bx - 6, 250, 12, 56))
-                ctx.text("<" if i == 0 else ">", bx, 312, 40, INK, align="center", bold=True)
+                    cookie(ctx.surf, bx, 258, 18)
+                ctx.text("<" if i == 0 else ">", bx, 340, 36, DIMTXT, align="center", bold=True)
         self.parts.draw(ctx, t)
         if t < self.msg_until and self.msg:
-            bubble(ctx, self.msg, int(hx), int(hy - 40))
+            fade = min(1.0, (self.msg_until - t) / 0.4)
+            ctx.text(self.msg, W // 2, 348, 32, lerp_color(BLACK, (225, 230, 240), fade),
+                     align="center", bold=True)
 
-        # HUD
-        pygame.draw.rect(ctx.surf, (255, 255, 255) if not night else (60, 60, 95), (0, 0, W, 34))
-        stat_bar(ctx, 14, 7, apple, p.food)
-        stat_bar(ctx, 164, 7, bolt, p.energy)
-        stat_bar(ctx, 314, 7, lambda s, x, y, z: heart(s, x, y - 5, 9), p.fun)
-        ctx.text("Bobo, %d g" % p.days(), W - 14, 9, 26, INK if not night else WHITE, align="right", bold=True)
+        # HUD discreto
+        stat_bar(ctx, 14, 8, apple, p.food)
+        stat_bar(ctx, 150, 8, bolt, p.energy)
+        stat_bar(ctx, 286, 8, lambda s, x, y, z: heart(s, x, y - 4, 7), p.fun)
+        ctx.text("Bobo  %d g%s" % (p.days(), "" if sound.enabled else "  (muto)"), W - 14, 9, 22,
+                 DIMTXT, align="right")
 
-        # barra azioni / scelta cibo
         y0 = 400
         if self.mode == "food":
-            items = [f[0] for f in FOODS]
-            icons = FOOD_ICONS
-            sel = self.food_sel
+            items, icons, sel = [f[0] for f in FOODS], FOOD_ICONS, self.food_sel
         else:
             items, icons, sel = ACTIONS, None, self.sel
         n = len(items)
@@ -635,21 +676,21 @@ class App:
         for i, label in enumerate(items):
             x = gap + i * (bw + gap)
             on = i == sel and self.mode in ("main", "food")
-            col = (255, 235, 150) if on else ((255, 255, 255) if not night else (70, 70, 110))
-            pygame.draw.rect(ctx.surf, col, (x, y0, bw, 52), border_radius=14)
-            pygame.draw.rect(ctx.surf, INK, (x, y0, bw, 52), 4 if on else 2, border_radius=14)
+            border = EYE_COLORS["happy"] if on else GREY
+            pygame.draw.rect(ctx.surf, (14, 16, 22), (x, y0, bw, 46), border_radius=12)
+            pygame.draw.rect(ctx.surf, border, (x, y0, bw, 46), 3 if on else 1, border_radius=12)
             if icons:
-                icons[i](ctx.surf, x + 26, y0 + 26, 13)
+                icons[i](ctx.surf, x + 24, y0 + 23, 11)
             else:
-                action_icon(ctx.surf, i, x + 26, y0 + 28, night, col)
+                action_icon(ctx.surf, i, x + 24, y0 + 24, night)
             if label == "Luce" and night:
                 label = "Sveglia"
-            ctx.text(label, x + 46, y0 + 15, 28, INK if (on or not night) else WHITE, bold=on)
-        hint = {"main": "SX/DX scegli   A fai   X stuzzica   B esci",
+            ctx.text(label, x + 42, y0 + 13, 27, WHITE if on else DIMTXT, bold=on)
+        hint = {"main": "SX/DX scegli  A fai  X stuzzica  Y suoni  B esci",
                 "food": "SX/DX scegli cibo   A dai   B annulla",
                 "game": "SINISTRA o DESTRA?   B lascia stare",
                 "reveal": ""}[self.mode]
-        ctx.text(hint, W // 2, 458, 22, (130, 120, 140) if not night else (170, 170, 210), align="center")
+        ctx.text(hint, W // 2, 456, 21, (85, 90, 105), align="center")
 
 
 def run(ctx):

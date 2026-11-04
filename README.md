@@ -7,12 +7,13 @@ modello per scriverne di nuovi.
 ```
 ports/
   Tool.sh                 <- avviatore (va in roms/ports/)
+  Chiavetta USB.sh        <- la console diventa una chiavetta per il PC
   tool/
     launcher.py           <- menu principale
-    r36/                  <- mini-libreria: schermo, tasti, menu, moduli
+    r36/                  <- mini-libreria: schermo, tasti, menu, moduli, suoni
     apps/
       areometro/          <- correzione temperatura, ABV, SG/Plato/Brix
-      amichetto/          <- Bobo, il piccolo amico virtuale
+      amichetto/          <- Bobo: due occhi su schermo nero che vivono
       cronometro/
       configura_tasti/    <- mappatura tasti (parte da sola al 1o avvio)
       _modello/           <- copia questa cartella per una nuova app
@@ -62,7 +63,7 @@ sudo apt update && sudo apt install -y python3-pygame
 
 ## 3. Installazione
 
-Con la SD nel PC, copia `ports/Tool.sh` **e** la cartella `ports/tool/` dentro
+Con la SD nel PC, copia `ports/Tool.sh`, `ports/Chiavetta USB.sh` **e** la cartella `ports/tool/` dentro
 la cartella `ports` della partizione giochi (`roms/ports/` su ArkOS,
 `EASYROMS/ports/` su alcune immagini). Poi in EmulationStation:
 *Start -> Game settings / Update games list*, e trovi **Tool** sotto Ports.
@@ -106,13 +107,68 @@ e una funzione che calcola i risultati. Guarda `apps/areometro/main.py`.
 
 ## Amichetto: Bobo
 
-Un piccolo amico verde col germoglio in testa. Ha tre bisogni: **fame**, **energia** e **allegria**.
+Schermo nero, due occhioni luminosi che si guardano intorno, sbattono le
+palpebre e cambiano forma e colore con l'umore. Ogni cosa ha il suo versetto:
+i suoni sono sintetizzati dal codice, quindi non servono file audio.
+
+| Umore | Occhi |
+|---|---|
+| contento | azzurri, si guardano intorno |
+| felice / mangia | a mezzaluna `^ ^`, saltellano |
+| coccole | diventano due cuori rosa |
+| arrabbiato | rossi, palpebre a V, tremano e fumano |
+| triste | blu, palpebre cadenti, lacrimucce |
+| fame | gialli |
+| stanco | mezzi chiusi |
+| dorme | due righine, con le "z" e il russare |
+| stuzzicato | `> <` |
+
+Tasti: **SX/DX** scegli, **A** fai, **X** stuzzica, **Y** suoni on/off, **B** esci.
 
 - **Mangia**: mela, biscotto o pizza. Se e' pieno rifiuta e sbuffa.
-- **Gioca**: indovina in quale pacchetto ha nascosto il biscotto (SINISTRA o DESTRA).
-- **Coccole**: cuoricini! Fanno passare anche il broncio.
+- **Gioca**: indovina in quale pacchetto ha nascosto il biscotto (gli occhi ti fanno
+  i dispetti guardando a destra e sinistra).
+- **Coccole**: cuoricini e una melodia. Fanno passare anche il broncio.
 - **Luce**: lo metti a dormire o lo svegli. Se lo svegli quando e' stanco si arrabbia.
-- **X = stuzzica**: tre volte di fila e diventa rosso e sbuffa fumo.
+- **X = stuzzica**: tre volte di fila e si arrabbia sul serio.
 
 Quando chiudi l'app lo stato viene salvato in `bobo.json`. Il tempo passa
 anche mentre sei via, ma piu' piano, e Bobo non muore mai.
+
+I suoni sono nel modulo `r36.sound`, utilizzabile da tutte le app:
+`sound.play("chirp")`, `sound.play(sound.babble("happy"))` oppure suoni tuoi con
+`sound.synth([(frequenza_inizio, frequenza_fine, durata, "sine"), ...])`.
+
+## Chiavetta USB (sperimentale)
+
+Avvia **Chiavetta USB** da Ports e collega la console al PC col cavo USB-C
+**dati** sulla porta **OTG**. Windows vede la partizione dei giochi come una
+chiavetta e ci puoi copiare dentro i file (giochi, app nuove per `tool/apps/`, ...).
+Per finire clicca **Espelli** su Windows, oppure tieni premuto un tasto della
+console per 2 secondi: la partizione viene ricontrollata, rimontata e
+EmulationStation riparte.
+
+Cosa fa lo script, per sicurezza: ferma EmulationStation, **smonta** la
+partizione (non va mai condivisa mentre e' in uso, si rovinerebbe), la espone
+via USB gadget, poi rimette tutto com'era. Se qualcosa non va si ferma prima
+di toccare i dati e lo scrive sullo schermo. Il log e' in `/tmp/r36-chiavetta.log`.
+
+**Funziona solo se il kernel del sistema ha la modalita' USB "device" sulla
+porta OTG.** Molte immagini per R36S la tengono solo in modalita' "host" (per
+le chiavette WiFi e i gamepad). In quel caso lo script ti dice "nessun UDC" e
+non fa niente. Restano due alternative:
+- togli la SD e mettila nel PC con un lettore di schede (la partizione giochi
+  e' FAT32/exFAT, Windows la vede);
+- con il WiFi, ArkOS (e di solito anche dArkOS) ha *Enable Remote Services* nelle Opzioni: in Esplora risorse
+  scrivi `\\<indirizzo-IP-della-console>` e vedi le cartelle in rete.
+
+## Compatibilita'
+
+- **pygame 2** (dArkOS, ROCKNIX, PC) e **pygame 1.9** (ArkOS vecchio basato su
+  Ubuntu 19.10): con pygame 1.9 gli angoli dei riquadri vengono dritti, il resto
+  e' uguale.
+- **Schermi diversi**: tutto viene disegnato a 640x480 e poi scalato, quindi
+  va bene anche sui cloni con schermi 720x720 o 480x320 (con le bande nere).
+- **Audio**: se manca la scheda audio o il driver, le app restano mute ma funzionano.
+- `Tool.sh` funziona da utente con `sudo` (ArkOS e dArkOS) o da root (ROCKNIX e
+  AmberELEC). Prova in ordine i driver video `kmsdrm`, automatico e `fbcon`.

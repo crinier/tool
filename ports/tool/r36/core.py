@@ -10,6 +10,8 @@ import time
 
 import pygame
 
+from .compat import joy_id
+
 W, H = 640, 480
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
@@ -95,7 +97,7 @@ class Input:
         try:
             j = pygame.joystick.Joystick(index)
             j.init()
-            self.joysticks[j.get_instance_id()] = j
+            self.joysticks[joy_id(j)] = j
         except pygame.error:
             pass
 
@@ -143,7 +145,7 @@ class Input:
                 self._add_joy(event.device_index)
                 continue
             if event.type == pygame.JOYDEVICEREMOVED:
-                self.joysticks.pop(event.instance_id, None)
+                self.joysticks.pop(getattr(event, "instance_id", None), None)
                 continue
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -197,6 +199,10 @@ class Ctx:
 
     def __init__(self):
         os.environ.setdefault("SDL_NOMOUSE", "1")
+        try:
+            pygame.mixer.pre_init(22050, -16, 1, 1024)
+        except pygame.error:
+            pass
         pygame.init()
         windowed = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
                         or os.environ.get("R36_WINDOW"))
