@@ -22,6 +22,7 @@ printf "\033c" >"$TTY" 2>/dev/null
 
 OLD=""
 UDC=""
+. "$DIR/usb_device_mode.sh"
 gadget_up() {
   $SUDO modprobe libcomposite 2>>"$LOG"
   $SUDO modprobe usb_f_ncm 2>>"$LOG"
@@ -29,6 +30,8 @@ gadget_up() {
   UDC="$(ls /sys/class/udc 2>/dev/null | head -n1)"
   [ -z "$UDC" ] && { $SUDO modprobe dwc2 2>>"$LOG"; sleep 1; UDC="$(ls /sys/class/udc 2>/dev/null | head -n1)"; }
   [ -z "$UDC" ] && { echo "nessun UDC" >>"$LOG"; return 1; }
+  remove_gadget "$G"
+  force_device
   for g in /sys/kernel/config/usb_gadget/*; do
     [ -d "$g" ] && [ "$g" != "$G" ] && [ "$(cat "$g/UDC" 2>/dev/null)" = "$UDC" ] && OLD="$g"
   done
@@ -54,21 +57,25 @@ gadget_up() {
   $SUDO ip addr add "$IP/16" dev "$IFACE" 2>>"$LOG"
   $SUDO ip link set "$IFACE" up 2>>"$LOG"
   echo "gadget ok: $IFACE $IP" >>"$LOG"
+  for i in 1 2 3 4 5 6; do
+    st="$(cat /sys/class/udc/$UDC/state 2>/dev/null)"
+    [ "$st" = "configured" ] && break
+    sleep 1
+  done
+  echo "stato porta: $st" >>"$LOG"
   return 0
 }
 
 gadget_down() {
-  [ -d "$G" ] || return
-  $SUDO sh -c "
-    echo '' > '$G/UDC'
-    rm -f '$G/configs/c.1/ncm.usb0'
-    rmdir '$G/configs/c.1/strings/0x409' '$G/configs/c.1' '$G/functions/ncm.usb0' '$G/strings/0x409' '$G'
-    [ -n '$OLD' ] && echo '$UDC' > '$OLD/UDC'
-  " 2>>"$LOG"
+  remove_gadget "$G"
+  [ -n "$OLD" ] && $SUDO sh -c "echo '$UDC' > '$OLD/UDC'" 2>>"$LOG"
+  restore_mode
 }
 
 if gadget_up; then
-  out "Cavo USB pronto: la console e' $IP" "Collega il cavo alla porta OTG e avvia sul PC" "'Schermo su console.bat'."
+  out "Cavo USB pronto: la console e' $IP" "Stato porta: $st  (deve diventare 'configured')" \
+      "Collega il cavo alla porta OTG e avvia sul PC" "'Schermo su console.bat'."
+  sleep 2
 else
   out "Modalita' USB device non disponibile (vedi $LOG)." "Provo comunque via WiFi, se c'e'."
 fi

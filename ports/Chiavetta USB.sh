@@ -24,6 +24,7 @@ if [ "$1" != "--worker" ]; then
   SELF="$(readlink -f "$0")"
   MNT="$(findmnt -n -o TARGET -T "$SELF")"
   cp "$SELF" "$WORK" && chmod +x "$WORK"
+  cp "$(dirname "$SELF")/tool/usb_device_mode.sh" /tmp/r36-usbmode.sh 2>/dev/null
   : >"$LOG"
   if command -v systemd-run >/dev/null 2>&1; then
     UNIT="r36-chiavetta-$$"
@@ -41,6 +42,9 @@ fi
 # ---------------------------------------------------------------- fase 2
 MNT="$2"
 NO_ES_STOP="$3"
+force_device() { :; }
+restore_mode() { :; }
+[ -f /tmp/r36-usbmode.sh ] && . /tmp/r36-usbmode.sh
 G=/sys/kernel/config/usb_gadget/r36
 FONT=/usr/share/consolefonts/Lat7-Terminus20x10.psf.gz
 [ -f "$FONT" ] && setfont -C "$TTY" "$FONT" 2>/dev/null
@@ -117,6 +121,7 @@ cleanup() {
           "$G/functions/mass_storage.usb0" "$G/strings/0x409" "$G" 2>>"$LOG"
   fi
   [ -n "$OLD" ] && echo "$UDC" >"$OLD/UDC" 2>>"$LOG"
+  restore_mode
   sync
   say "" "Rimonto la partizione..."
   case "$FSTYPE" in
@@ -137,6 +142,7 @@ else
     [ -d "$g" ] && [ "$g" != "$G" ] && [ "$(cat "$g/UDC" 2>/dev/null)" = "$UDC" ] && OLD="$g"
   done
   [ -n "$OLD" ] && echo "" >"$OLD/UDC"
+  force_device
   mkdir -p "$G" && cd "$G" || fail "configfs non scrivibile."
   echo 0x1d6b >idVendor
   echo 0x0104 >idProduct

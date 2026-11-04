@@ -30,10 +30,21 @@ printf "\033c" >"$TTY" 2>/dev/null
     if modinfo "$m" >/dev/null 2>&1 || grep -qw "${m}" /proc/modules 2>/dev/null; then echo -n "$m:si "; else echo -n "$m:no "; fi
   done
   echo
+  for f in $(find /sys/devices/platform -name otg_mode 2>/dev/null); do echo "otg_mode: $(cat "$f")  ($f)"; done
+  if [ -d /sys/kernel/config/usb_gadget ]; then
+    T=/sys/kernel/config/usb_gadget/r36test
+    echo -n "funzioni USB nel kernel: "
+    $SUDO mkdir -p "$T" 2>/dev/null
+    for fn in ncm ecm rndis mass_storage acm; do
+      if $SUDO mkdir "$T/functions/$fn.t" 2>/dev/null; then echo -n "$fn:SI "; $SUDO rmdir "$T/functions/$fn.t"; else echo -n "$fn:no "; fi
+    done
+    $SUDO rmdir "$T" 2>/dev/null
+    echo
+  fi
   echo -n "gadget gia' attivi: "; ls /sys/kernel/config/usb_gadget 2>/dev/null | tr '\n' ' '; echo
   echo "Python: $(python3 --version 2>&1)"
   echo "--- log Schermo PC (ultime righe) ---"
-  tail -n 6 "$DIR/tool/log-schermo.txt" 2>/dev/null || echo "(nessun log: Schermo PC mai avviato?)"
+  grep -v CRTC "$DIR/tool/log-schermo.txt" 2>/dev/null | tail -n 8; [ -f "$DIR/tool/log-schermo.txt" ] || echo "(nessun log: Schermo PC mai avviato?)"
   echo "--- VERDETTO ---"
   if [ -z "$UDC" ]; then
     echo "La porta USB della console funziona solo da 'host' (per chiavette e pad)."
