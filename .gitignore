@@ -2,3 +2,4 @@ config.json
 log.txt
 __pycache__/
 *.tmp
+r36-tool.zip
