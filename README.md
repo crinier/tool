@@ -92,7 +92,7 @@ tasto non ce l'hai, aspetta 8 secondi e viene saltato). Tutto viene salvato in
 
 Doppio clic su **`ports/Avvia su Windows.bat`**. Serve Python 3 da
 python.org (durante l'installazione spunta *Add python.exe to PATH*). La prima
-volta installa pygame da solo. Si apre una finestra ridimensionabile:
+volta installa da solo pygame-ce (uguale a pygame, ma pronto anche per Python 3.14). Si apre una finestra ridimensionabile:
 **F11** schermo intero, **ESC** esci. Funziona anche un gamepad collegato al PC.
 
 ## 4b. Provare sul PC (Linux / Mac)
