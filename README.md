@@ -180,6 +180,7 @@ non fa niente. Restano due alternative:
 | **Rilevatore** | radar di movimento da film: fascio che gira, presenze che si avvicinano, bip sempre piu' veloci, allarme e "CONTATTO!" | tieni **L1**: arrivano piu' in fretta. Tieni **R1**: spariscono |
 | **Lovometro** | scrivi due nomi e il cuore si riempie con la percentuale. Le stesse due persone hanno sempre lo stesso risultato | tieni **L1** mentre confermi il secondo nome: 100% |
 | **Macchina della verita'** | l'amico tiene premuto A mentre risponde, il grafico impazzisce, poi arriva il verdetto | al rilascio tieni **L1** per VERITA' o **R1** per BUGIA |
+| **Scanner** | pollice sullo schermo, tieni premuto A: impronta, linea di scansione, percentuale e frase. Misure: simpatia, pigrizia, fame, contenuto di pizza, nerd, russare, fortuna | a fine scansione tieni **L1** per 70-100%, **R1** per 0-5% |
 | **Palla magica** | fai una domanda, premi A, la palla trema e risponde | - |
 
 Sono tutte per gioco: niente sensori veri, e' teatro.
