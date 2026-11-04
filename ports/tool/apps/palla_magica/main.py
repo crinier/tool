@@ -1,8 +1,6 @@
-"""Palla magica: fai una domanda, premi A e la palla risponde."""
+"""Palla magica (senza palla): fai una domanda, premi A, arriva la risposta."""
 import math
 import random
-
-import pygame
 
 import r36
 from r36 import sound
@@ -20,48 +18,49 @@ ANSWERS = [
 ]
 
 
+def wrap(ctx, text, size, width):
+    lines, cur = [], ""
+    for w in text.split():
+        if ctx.font(size, True).size((cur + " " + w).strip())[0] > width and cur:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = (cur + " " + w).strip()
+    return lines + [cur]
+
+
 def run(ctx):
-    answer = None
-    shake = 0.0
-    t = 0.0
+    answer, think, t, since = None, 0.0, 0.0, 0.0
     rumble = sound.synth([(90, 70, 0.6, "noise")], 0.25)
     ctx.input.flush()
     while True:
         for a in ctx.input.poll():
             if a == "B":
                 return
-            if a == "A" and shake <= 0:
-                shake, answer = 1.2, None
+            if a == "A" and think <= 0:
+                think, answer = 1.2, None
                 sound.play(rumble)
         t += 1 / 30
-        if shake > 0:
-            shake -= 1 / 30
-            if shake <= 0:
-                answer = random.choice(ANSWERS)
+        if think > 0:
+            think -= 1 / 30
+            if think <= 0:
+                answer, since = random.choice(ANSWERS), 0.0
                 sound.play("chirp")
-        s = ctx.surf
-        s.fill((10, 6, 24))
-        ox = math.sin(t * 50) * 14 * max(0.0, shake)
-        cx, cy = W // 2 + int(ox), 220
-        pygame.draw.circle(s, (20, 20, 30), (cx, cy), 170)
-        pygame.draw.circle(s, (45, 45, 60), (cx - 50, cy - 60), 40)
-        pygame.draw.circle(s, (30, 40, 140), (cx, cy), 82)
-        tri = [(cx, cy - 70), (cx - 62, cy + 40), (cx + 62, cy + 40)]
+        since += 1 / 30
+        ctx.surf.fill((10, 6, 24))
         if answer:
-            pygame.draw.polygon(s, (60, 80, 220), tri)
-            words, lines, cur = answer.split(), [], ""
-            for w in words:
-                if ctx.font(24, True).size(cur + " " + w)[0] > 100 and cur:
-                    lines.append(cur)
-                    cur = w
-                else:
-                    cur = (cur + " " + w).strip()
-            lines.append(cur)
+            k = min(1.0, since / 0.6)                      # appare piano piano
+            col = tuple(int(c * k) for c in (230, 225, 255))
+            lines = wrap(ctx, answer, 64, W - 80)
+            y0 = H // 2 - 40 - (len(lines) - 1) * 34
             for i, ln in enumerate(lines):
-                ctx.text(ln, cx, cy - 18 + i * 22 - (len(lines) - 1) * 8, 24, (255, 255, 255),
-                         align="center", bold=True)
+                ctx.text(ln, W // 2, y0 + i * 68, 64, col, align="center", bold=True)
+        elif think > 0:
+            dots = "." * (1 + int(t * 6) % 3)
+            ox = int(math.sin(t * 50) * 6)
+            ctx.text(dots, W // 2 + ox, H // 2 - 70, 120, (150, 140, 230), align="center", bold=True)
         else:
-            ctx.text("8" if shake <= 0 else "?", cx, cy - 34, 80, (255, 255, 255), align="center", bold=True)
+            ctx.text("?", W // 2, H // 2 - 110, 160, (90, 80, 160), align="center", bold=True)
         ctx.text("Pensa a una domanda e premi A", W // 2, 410, 28, (180, 170, 230), align="center")
         ctx.text("B esci", W // 2, 448, 20, (100, 90, 140), align="center")
         ctx.flip()
